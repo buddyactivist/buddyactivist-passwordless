@@ -50,3 +50,39 @@ function bapl_is_bp_xprofile_active() {
 function bapl_is_bp_avatar_active() {
     return function_exists( 'bp_core_avatar_handle_upload' );
 }
+
+/**
+ * Add a message to be displayed in the current request.
+ *
+ * @param string $type Message type: success|error|info.
+ * @param string $text Message text.
+ */
+function bapl_add_message( $type, $text ) {
+    global $bapl_messages;
+
+    if ( ! isset( $bapl_messages ) || ! is_array( $bapl_messages ) ) {
+        $bapl_messages = [];
+    }
+
+    $type = in_array( $type, [ 'success', 'error', 'info' ], true ) ? $type : 'info';
+
+    $bapl_messages[] = [
+        'type' => $type,
+        'text' => $text,
+    ];
+}
+
+/**
+ * Get all messages for the current request.
+ *
+ * @return array
+ */
+function bapl_get_messages() {
+    global $bapl_messages;
+
+    if ( ! isset( $bapl_messages ) || ! is_array( $bapl_messages ) ) {
+        return [];
+    }
+
+    return $bapl_messages;
+}
