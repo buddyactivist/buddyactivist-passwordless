@@ -4,7 +4,18 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 $current_user_id = get_current_user_id();
+$messages        = bapl_get_messages();
 ?>
+<?php if ( ! empty( $messages ) ) : ?>
+    <div class="bapl-messages">
+        <?php foreach ( $messages as $message ) : ?>
+            <div class="bapl-message bapl-message-<?php echo esc_attr( $message['type'] ); ?>">
+                <?php echo esc_html( $message['text'] ); ?>
+            </div>
+        <?php endforeach; ?>
+    </div>
+<?php endif; ?>
+
 <form method="post" class="bapl-form bapl-form-registration-completion" enctype="multipart/form-data">
 
     <p><?php esc_html_e( 'Complete your profile to finish your registration.', 'buddyactivist-passwordless' ); ?></p>
