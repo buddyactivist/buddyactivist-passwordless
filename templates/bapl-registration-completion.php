@@ -11,7 +11,7 @@ $has_payment = ! empty( $payment_shortcode );
 
         <?php wp_nonce_field( 'bapl_registration_completion', 'bapl_nonce' ); ?>
 
-        <!-- Here we have xProfile fields + avatar -->
+        <!-- Campi xProfile + avatar -->
 
         <button type="submit" name="bapl_registration_complete">
             <?php echo $has_payment
