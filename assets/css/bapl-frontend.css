@@ -1,0 +1,51 @@
+/* Basic styling for BuddyActivist Passwordless forms */
+
+.bapl-form {
+    max-width: 420px;
+    margin: 20px auto;
+    padding: 20px;
+    border: 1px solid #ddd;
+    background: #fafafa;
+    border-radius: 6px;
+}
+
+.bapl-form p {
+    margin-bottom: 15px;
+    font-size: 15px;
+}
+
+.bapl-form-row {
+    display: flex;
+    gap: 10px;
+}
+
+.bapl-form input[type="email"],
+.bapl-form input[type="text"],
+.bapl-form input[type="file"] {
+    flex: 1;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+.bapl-form button {
+    padding: 10px 16px;
+    background: #0073aa;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.bapl-form button:hover {
+    background: #005f8d;
+}
+
+.bapl-registration-completed {
+    max-width: 420px;
+    margin: 20px auto;
+    padding: 20px;
+    border: 1px solid #ddd;
+    background: #fafafa;
+    border-radius: 6px;
+}
