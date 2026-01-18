@@ -1,23 +1,14 @@
 <?php
-if ( ! defined( 'ABSPATH' ) ) {
-    exit;
-}
+if ( ! defined( 'ABSPATH' ) ) exit;
 
 global $post;
 
-// Payment shortcode to detect
-$payment_shortcode = 'your_payment_shortcode';
-
-$has_payment = false;
-
-if ( isset( $post->post_content ) && has_shortcode( $post->post_content, $payment_shortcode ) ) {
-    $has_payment = true;
-}
+$payment_shortcode = get_option( 'bapl_payment_shortcode', '' );
+$has_payment = ! empty( $payment_shortcode );
 ?>
 
 <div class="bapl-registration-completed">
 
-    <!-- Message always visible -->
     <p><?php esc_html_e( 'To complete your registration, follow the instructions below.', 'buddyactivist-passwordless' ); ?></p>
 
     <?php if ( $has_payment ) : ?>
@@ -25,10 +16,7 @@ if ( isset( $post->post_content ) && has_shortcode( $post->post_content, $paymen
         <p><?php esc_html_e( 'Your registration is almost complete. If required, complete the payment below.', 'buddyactivist-passwordless' ); ?></p>
 
         <?php
-        // Retrieve timestamp for countdown
         $timestamp = (int) get_user_meta( get_current_user_id(), 'bapl_payment_timestamp', true );
-
-        // 60 minutes = 3600 seconds
         $remaining = max( 0, ( $timestamp + 3600 ) - time() );
         ?>
 
@@ -62,21 +50,14 @@ if ( isset( $post->post_content ) && has_shortcode( $post->post_content, $paymen
         })();
         </script>
 
-        <?php
-        // Render payment shortcode via page content
-        the_content();
-        ?>
+        <?php the_content(); ?>
 
-    <?php else : ?>
-
-        <p><?php esc_html_e( 'To complete your registration, press the button below.', 'buddyactivist-passwordless' ); ?></p>
-
-        <form method="post" class="bapl-form bapl-form-end-registration">
-            <?php wp_nonce_field( 'bapl_registration_completed', 'bapl_nonce' ); ?>
-            <button type="submit" name="bapl_end_registration">
-                <?php esc_html_e( 'Finish registration', 'buddyactivist-passwordless' ); ?>
-            </button>
-        </form>
+        <script>
+        // Redirect after payment (hook gateway side)
+        document.addEventListener('bapl_payment_completed', function() {
+            window.location.href = "<?php echo esc_url( bp_core_get_user_domain( get_current_user_id() ) ); ?>";
+        });
+        </script>
 
     <?php endif; ?>
 
