@@ -11,6 +11,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 class BAPL_Registration {
 
+    /**
+     * Initialize hooks and shortcodes.
+     */
     public function init() {
         add_shortcode( 'bapl_registration', [ $this, 'render_registration_form' ] );
         add_shortcode( 'bapl_registration_completion', [ $this, 'render_completion_form' ] );
@@ -21,15 +24,24 @@ class BAPL_Registration {
         add_action( 'init', [ $this, 'handle_end_registration' ] );
     }
 
+    /**
+     * Render the initial registration form (email → magic link).
+     *
+     * @return string
+     */
     public function render_registration_form() {
         if ( isset( $_POST['bapl_registration_send'] ) ) {
             $this->handle_registration_request();
         }
+
         ob_start();
         include BAPL_PLUGIN_DIR . 'templates/bapl-registration-form.php';
         return ob_get_clean();
     }
 
+    /**
+     * Handle the registration request: validate email and send magic link.
+     */
     protected function handle_registration_request() {
 
         if ( empty( $_POST['bapl_nonce'] ) ||
@@ -50,6 +62,9 @@ class BAPL_Registration {
         bapl_add_message( 'success', __( 'We have sent you a magic link to complete your registration.', 'buddyactivist-passwordless' ) );
     }
 
+    /**
+     * Handle magic link for registration: create user if needed and log in.
+     */
     public function handle_magic_link() {
 
         if ( empty( $_GET['bapl_action'] ) ||
@@ -88,12 +103,20 @@ class BAPL_Registration {
         bapl_redirect( bapl_get_page_url( 'bapl-registration-completion' ) );
     }
 
+    /**
+     * Render the registration completion form (xProfile + avatar).
+     *
+     * @return string
+     */
     public function render_completion_form() {
         ob_start();
         include BAPL_PLUGIN_DIR . 'templates/bapl-registration-completion.php';
         return ob_get_clean();
     }
 
+    /**
+     * Handle submission of the registration completion form.
+     */
     public function handle_completion_submit() {
 
         if ( ! isset( $_POST['bapl_registration_complete'] ) ) {
@@ -158,7 +181,7 @@ class BAPL_Registration {
             }
 
             // Validate file type.
-            $filetype = wp_check_filetype( $file['name'] );
+            $filetype      = wp_check_filetype( $file['name'] );
             $allowed_types = [ 'jpg', 'jpeg', 'png', 'gif', 'webp' ];
 
             if ( empty( $filetype['ext'] ) || ! in_array( strtolower( $filetype['ext'] ), $allowed_types, true ) ) {
@@ -213,12 +236,32 @@ class BAPL_Registration {
         bapl_redirect( bapl_get_page_url( 'bapl-registration-completed' ) );
     }
 
+    /**
+     * Render the "registration completed" page.
+     *
+     * @return string
+     */
     public function render_completed_page() {
+
+        $user_id = get_current_user_id();
+
+        global $post;
+        $payment_shortcode = 'il_tuo_shortcode_di_pagamento';
+
+        // Mark user as pending payment ONLY if shortcode is present.
+        if ( isset( $post->post_content ) && has_shortcode( $post->post_content, $payment_shortcode ) ) {
+            update_user_meta( $user_id, 'bapl_payment_pending', 1 );
+            update_user_meta( $user_id, 'bapl_payment_timestamp', time() );
+        }
+
         ob_start();
         include BAPL_PLUGIN_DIR . 'templates/bapl-registration-completed.php';
         return ob_get_clean();
     }
 
+    /**
+     * Handle the final "Finish registration" button (no payment case).
+     */
     public function handle_end_registration() {
 
         if ( ! isset( $_POST['bapl_end_registration'] ) ) {
