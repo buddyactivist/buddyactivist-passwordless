@@ -40,11 +40,14 @@ class BAPL_Registration {
         $email = isset( $_POST['bapl_email'] ) ? sanitize_email( $_POST['bapl_email'] ) : '';
 
         if ( ! is_email( $email ) ) {
+            bapl_add_message( 'error', __( 'Please enter a valid email address.', 'buddyactivist-passwordless' ) );
             return;
         }
 
         $token = BAPL_Magic_Link::generate( $email, 'registration' );
         BAPL_Email::send_magic_link( $email, 'registration', $token );
+
+        bapl_add_message( 'success', __( 'We have sent you a magic link to complete your registration.', 'buddyactivist-passwordless' ) );
     }
 
     public function handle_magic_link() {
@@ -99,10 +102,12 @@ class BAPL_Registration {
 
         if ( empty( $_POST['bapl_nonce'] ) ||
              ! BAPL_Security::verify_nonce( $_POST['bapl_nonce'], 'bapl_registration_completion' ) ) {
+            bapl_add_message( 'error', __( 'Security check failed. Please try again.', 'buddyactivist-passwordless' ) );
             return;
         }
 
         if ( ! is_user_logged_in() ) {
+            bapl_add_message( 'error', __( 'You must be logged in to complete your registration.', 'buddyactivist-passwordless' ) );
             return;
         }
 
@@ -134,45 +139,73 @@ class BAPL_Registration {
         }
 
         /**
-         * Avatar upload handling (BuddyPress).
+         * Avatar upload handling (BuddyPress) with validation.
          */
         if ( bapl_is_bp_avatar_active() && ! empty( $_FILES['bapl_avatar']['name'] ) ) {
 
+            $file = $_FILES['bapl_avatar'];
+
+            if ( $file['error'] !== UPLOAD_ERR_OK ) {
+                bapl_add_message( 'error', __( 'There was an error uploading your avatar. Please try again.', 'buddyactivist-passwordless' ) );
+                return;
+            }
+
+            // Validate file size (max 2MB).
+            $max_size = 2 * 1024 * 1024;
+            if ( $file['size'] > $max_size ) {
+                bapl_add_message( 'error', __( 'Your avatar is too large. The maximum size is 2MB.', 'buddyactivist-passwordless' ) );
+                return;
+            }
+
+            // Validate file type.
+            $filetype = wp_check_filetype( $file['name'] );
+            $allowed_types = [ 'jpg', 'jpeg', 'png', 'gif', 'webp' ];
+
+            if ( empty( $filetype['ext'] ) || ! in_array( strtolower( $filetype['ext'] ), $allowed_types, true ) ) {
+                bapl_add_message( 'error', __( 'Invalid avatar format. Please upload a JPG, PNG, GIF, or WebP image.', 'buddyactivist-passwordless' ) );
+                return;
+            }
+
+            // Validate dimensions (min 300x300).
+            $image_info = @getimagesize( $file['tmp_name'] );
+            if ( ! $image_info || $image_info[0] < 300 || $image_info[1] < 300 ) {
+                bapl_add_message( 'error', __( 'Your avatar is too small. Minimum size is 300x300 pixels.', 'buddyactivist-passwordless' ) );
+                return;
+            }
+
             require_once ABSPATH . 'wp-admin/includes/file.php';
 
-            $file = $_FILES['bapl_avatar'];
-            $allowed = [ 'image/jpeg', 'image/png', 'image/gif' ];
+            $uploaded = wp_handle_upload( $file, [ 'test_form' => false ] );
 
-            if ( in_array( $file['type'], $allowed, true ) ) {
-
-                $uploaded = wp_handle_upload( $file, [ 'test_form' => false ] );
-
-                if ( ! isset( $uploaded['error'] ) ) {
-
-                    $avatar_args = [
-                        'item_id'       => $user_id,
-                        'object'        => 'user',
-                        'original_file' => $uploaded['file'],
-                    ];
-
-                    $avatar = bp_core_avatar_handle_upload( $avatar_args );
-
-                    if ( ! is_wp_error( $avatar ) ) {
-
-                        $crop_args = [
-                            'item_id'       => $user_id,
-                            'object'        => 'user',
-                            'original_file' => $uploaded['file'],
-                            'crop_w'        => 150,
-                            'crop_h'        => 150,
-                            'crop_x'        => 0,
-                            'crop_y'        => 0,
-                        ];
-
-                        bp_core_avatar_handle_crop( $crop_args );
-                    }
-                }
+            if ( isset( $uploaded['error'] ) ) {
+                bapl_add_message( 'error', __( 'There was an error saving your avatar. Please try again.', 'buddyactivist-passwordless' ) );
+                return;
             }
+
+            $avatar_args = [
+                'item_id'       => $user_id,
+                'object'        => 'user',
+                'original_file' => $uploaded['file'],
+            ];
+
+            $avatar = bp_core_avatar_handle_upload( $avatar_args );
+
+            if ( is_wp_error( $avatar ) ) {
+                bapl_add_message( 'error', __( 'There was an error processing your avatar. Please try again.', 'buddyactivist-passwordless' ) );
+                return;
+            }
+
+            $crop_args = [
+                'item_id'       => $user_id,
+                'object'        => 'user',
+                'original_file' => $uploaded['file'],
+                'crop_w'        => 150,
+                'crop_h'        => 150,
+                'crop_x'        => 0,
+                'crop_y'        => 0,
+            ];
+
+            bp_core_avatar_handle_crop( $crop_args );
         }
 
         delete_user_meta( $user_id, 'bapl_registration_incomplete' );
