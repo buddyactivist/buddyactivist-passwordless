@@ -5,7 +5,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 global $post;
 
-// Change this to your payment shortcode
+// Payment shortcode to detect
 $payment_shortcode = 'your_payment_shortcode';
 
 $has_payment = false;
@@ -25,7 +25,45 @@ if ( isset( $post->post_content ) && has_shortcode( $post->post_content, $paymen
         <p><?php esc_html_e( 'Your registration is almost complete. If required, complete the payment below.', 'buddyactivist-passwordless' ); ?></p>
 
         <?php
-        // The page content will render the payment shortcode
+        // Retrieve timestamp for countdown
+        $timestamp = (int) get_user_meta( get_current_user_id(), 'bapl_payment_timestamp', true );
+
+        // 60 minutes = 3600 seconds
+        $remaining = max( 0, ( $timestamp + 3600 ) - time() );
+        ?>
+
+        <div id="bapl-timer" data-remaining="<?php echo esc_attr( $remaining ); ?>">
+            <?php esc_html_e( 'You have 60 minutes to complete the payment.', 'buddyactivist-passwordless' ); ?>
+        </div>
+
+        <script>
+        (function() {
+            const el = document.getElementById('bapl-timer');
+            if (!el) return;
+
+            let remaining = parseInt(el.dataset.remaining, 10);
+
+            function updateTimer() {
+                if (remaining <= 0) {
+                    el.textContent = "<?php echo esc_js( __( 'Your time to complete the payment has expired.', 'buddyactivist-passwordless' ) ); ?>";
+                    return;
+                }
+
+                const minutes = Math.floor(remaining / 60);
+                const seconds = remaining % 60;
+
+                el.textContent = minutes + "m " + (seconds < 10 ? "0" : "") + seconds + "s";
+
+                remaining--;
+                setTimeout(updateTimer, 1000);
+            }
+
+            updateTimer();
+        })();
+        </script>
+
+        <?php
+        // Render payment shortcode via page content
         the_content();
         ?>
 
