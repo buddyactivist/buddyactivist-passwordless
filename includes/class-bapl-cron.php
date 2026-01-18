@@ -4,13 +4,13 @@ if ( ! defined( 'ABSPATH' ) ) exit;
 class BAPL_Cron {
 
     public function init() {
-        add_action( 'bapl_check_unpaid_users', [ $this, 'check_unpaid_users' ] );
+        add_filter( 'cron_schedules', [ $this, 'add_quarterhourly_schedule' ] );
 
         if ( ! wp_next_scheduled( 'bapl_check_unpaid_users' ) ) {
             wp_schedule_event( time(), 'quarterhourly', 'bapl_check_unpaid_users' );
         }
 
-        add_filter( 'cron_schedules', [ $this, 'add_quarterhourly_schedule' ] );
+        add_action( 'bapl_check_unpaid_users', [ $this, 'check_unpaid_users' ] );
     }
 
     public function add_quarterhourly_schedule( $schedules ) {
