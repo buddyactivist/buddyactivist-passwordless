@@ -6,7 +6,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 global $post;
 
 // Change this to your payment shortcode
-$payment_shortcode = 'il_tuo_shortcode_di_pagamento';
+$payment_shortcode = 'your_payment_shortcode';
 
 $has_payment = false;
 
