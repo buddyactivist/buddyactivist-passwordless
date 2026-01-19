@@ -1,2 +1,2 @@
 # BuddyActivist Passwordless
-Passwordless Registration and Login for Buddypress & Buddyboss
+Passwordless Registration, Login and optional Paid Subscription for Buddypress & Buddyboss
